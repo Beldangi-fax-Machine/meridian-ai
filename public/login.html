@@ -162,6 +162,10 @@
         </form>
         <div class="back-link">
             <a href="index.html"><i class="fas fa-arrow-left"></i> Back to Home</a>
+            <br><br>
+            <button onclick="clearSession()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #B0B0B0; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                Clear Session (Debug)
+            </button>
         </div>
     </div>
 
@@ -278,13 +282,34 @@
         }
 
         // Check if user is already logged in
-        window.addEventListener('load', () => {
-            const user = localStorage.getItem('meridian_user');
-            if (user) {
-                // User is already logged in, redirect to main page
-                window.location.href = 'home.html';
+        window.addEventListener('load', async () => {
+            console.log('Login page loaded, checking authentication...');
+            try {
+                // Check if user is authenticated with Supabase
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                console.log('Supabase auth check result:', { user: !!user, error: !!error });
+                
+                if (user && !error) {
+                    console.log('User is authenticated, redirecting to home...');
+                    // User is properly authenticated, redirect to dashboard
+                    window.location.href = 'home.html';
+                } else {
+                    console.log('User not authenticated, clearing session data...');
+                    // Clear any invalid session data
+                    localStorage.removeItem('meridian_user');
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+                // Clear any corrupted session data
+                localStorage.removeItem('meridian_user');
             }
         });
+
+        function clearSession() {
+            localStorage.removeItem('meridian_user');
+            showError('Session cleared');
+        }
     </script>
 </body>
 </html> 
