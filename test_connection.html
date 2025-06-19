@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Supabase Connection - Meridian AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .loading {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Supabase Connection Test</h1>
+    
+    <div class="test-section" id="config-test">
+        <h3>1. Configuration Test</h3>
+        <div id="config-result">Testing...</div>
+    </div>
+
+    <div class="test-section" id="connection-test">
+        <h3>2. Connection Test</h3>
+        <div id="connection-result">Waiting...</div>
+    </div>
+
+    <div class="test-section" id="tables-test">
+        <h3>3. Database Tables Test</h3>
+        <div id="tables-result">Waiting...</div>
+        <button onclick="testTables()">Test Tables</button>
+    </div>
+
+    <div class="test-section" id="data-test">
+        <h3>4. Sample Data Test</h3>
+        <div id="data-result">Waiting...</div>
+        <button onclick="testData()">Test Data</button>
+        <button onclick="populateData()">Populate Sample Data</button>
+    </div>
+
+    <div class="test-section">
+        <h3>5. Quick Fix</h3>
+        <p>If the tests above show errors, try these steps:</p>
+        <ol>
+            <li>Make sure your Supabase project is active</li>
+            <li>Check that the tables exist in your Supabase dashboard</li>
+            <li>Run the SQL setup script in your Supabase SQL editor</li>
+            <li>Verify your API keys are correct</li>
+        </ol>
+        <a href="supabase_setup.sql" target="_blank">View SQL Setup Script</a>
+    </div>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script>
+        let supabase;
+
+        // Test 1: Configuration
+        function testConfig() {
+            const configDiv = document.getElementById('config-result');
+            const configSection = document.getElementById('config-test');
+            
+            try {
+                if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_ANON_KEY === 'undefined') {
+                    configDiv.innerHTML = '❌ ERROR: Supabase configuration not found. Check config.js file.';
+                    configSection.className = 'test-section error';
+                    return false;
+                }
+                
+                configDiv.innerHTML = `
+                    ✅ Configuration loaded successfully<br>
+                    <strong>URL:</strong> ${SUPABASE_URL}<br>
+                    <strong>Key:</strong> ${SUPABASE_ANON_KEY.substring(0, 20)}...
+                `;
+                configSection.className = 'test-section success';
+                return true;
+            } catch (error) {
+                configDiv.innerHTML = `❌ ERROR: ${error.message}`;
+                configSection.className = 'test-section error';
+                return false;
+            }
+        }
+
+        // Test 2: Connection
+        async function testConnection() {
+            const connectionDiv = document.getElementById('connection-result');
+            const connectionSection = document.getElementById('connection-test');
+            
+            try {
+                connectionDiv.innerHTML = '🔄 Testing connection...';
+                connectionSection.className = 'test-section loading';
+                
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                // Test a simple query
+                const { data, error } = await supabase
+                    .from('system_status')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) {
+                    connectionDiv.innerHTML = `❌ Connection failed: ${error.message}`;
+                    connectionSection.className = 'test-section error';
+                    return false;
+                }
+                
+                connectionDiv.innerHTML = '✅ Connection successful!';
+                connectionSection.className = 'test-section success';
+                return true;
+            } catch (error) {
+                connectionDiv.innerHTML = `❌ Connection error: ${error.message}`;
+                connectionSection.className = 'test-section error';
+                return false;
+            }
+        }
+
+        // Test 3: Tables
+        async function testTables() {
+            const tablesDiv = document.getElementById('tables-result');
+            const tablesSection = document.getElementById('tables-test');
+            
+            try {
+                tablesDiv.innerHTML = '🔄 Testing tables...';
+                tablesSection.className = 'test-section loading';
+                
+                const tables = ['system_status', 'incidents', 'uptime_stats'];
+                const results = {};
+                
+                for (const table of tables) {
+                    try {
+                        const { data, error } = await supabase
+                            .from(table)
+                            .select('*')
+                            .limit(1);
+                        
+                        if (error) {
+                            results[table] = { exists: false, error: error.message };
+                        } else {
+                            results[table] = { exists: true, count: data ? data.length : 0 };
+                        }
+                    } catch (err) {
+                        results[table] = { exists: false, error: err.message };
+                    }
+                }
+                
+                let html = '<h4>Table Status:</h4>';
+                let allExist = true;
+                
+                for (const [table, result] of Object.entries(results)) {
+                    if (result.exists) {
+                        html += `✅ <strong>${table}</strong>: Exists (${result.count} rows)<br>`;
+                    } else {
+                        html += `❌ <strong>${table}</strong>: ${result.error}<br>`;
+                        allExist = false;
+                    }
+                }
+                
+                if (allExist) {
+                    tablesDiv.innerHTML = html;
+                    tablesSection.className = 'test-section success';
+                } else {
+                    tablesDiv.innerHTML = html + '<br><strong>Some tables are missing. Run the SQL setup script.</strong>';
+                    tablesSection.className = 'test-section error';
+                }
+                
+            } catch (error) {
+                tablesDiv.innerHTML = `❌ Error testing tables: ${error.message}`;
+                tablesSection.className = 'test-section error';
+            }
+        }
+
+        // Test 4: Data
+        async function testData() {
+            const dataDiv = document.getElementById('data-result');
+            
+            try {
+                dataDiv.innerHTML = '🔄 Testing data...';
+                
+                const { data: statusData, error: statusError } = await supabase
+                    .from('system_status')
+                    .select('*');
+                
+                const { data: incidentsData, error: incidentsError } = await supabase
+                    .from('incidents')
+                    .select('*');
+                
+                const { data: uptimeData, error: uptimeError } = await supabase
+                    .from('uptime_stats')
+                    .select('*');
+                
+                let html = '<h4>Data Status:</h4>';
+                html += `📊 <strong>System Status:</strong> ${statusError ? 'Error' : statusData?.length || 0} records<br>`;
+                html += `📋 <strong>Incidents:</strong> ${incidentsError ? 'Error' : incidentsData?.length || 0} records<br>`;
+                html += `📈 <strong>Uptime Stats:</strong> ${uptimeError ? 'Error' : uptimeData?.length || 0} records<br>`;
+                
+                const totalRecords = (statusData?.length || 0) + (incidentsData?.length || 0) + (uptimeData?.length || 0);
+                
+                if (totalRecords > 0) {
+                    html += `<br>✅ <strong>Total:</strong> ${totalRecords} records found`;
+                } else {
+                    html += `<br>⚠️ <strong>No data found.</strong> Click "Populate Sample Data" to add test data.`;
+                }
+                
+                dataDiv.innerHTML = html;
+                
+            } catch (error) {
+                dataDiv.innerHTML = `❌ Error testing data: ${error.message}`;
+            }
+        }
+
+        // Populate sample data
+        async function populateData() {
+            const dataDiv = document.getElementById('data-result');
+            
+            try {
+                dataDiv.innerHTML = '🔄 Populating sample data...';
+                
+                // Sample data
+                const systemStatusData = [
+                    { service_name: 'AI Core Engine', status: 'operational', response_time: 85 },
+                    { service_name: 'API Gateway', status: 'operational', response_time: 45 },
+                    { service_name: 'Database', status: 'operational', response_time: 120 },
+                    { service_name: 'User Dashboard', status: 'operational', response_time: 65 },
+                    { service_name: 'Analytics Engine', status: 'operational', response_time: 95 },
+                    { service_name: 'Security Services', status: 'operational', response_time: 55 }
+                ];
+
+                const incidentsData = [
+                    {
+                        title: 'Scheduled Maintenance Completed',
+                        description: 'Routine system maintenance has been completed successfully.',
+                        severity: 'low',
+                        status: 'resolved',
+                        affected_services: ['All Services']
+                    }
+                ];
+
+                const uptimeStatsData = [
+                    { service_name: 'AI Core Engine', uptime_percentage: 99.9, total_checks: 1000, successful_checks: 999 },
+                    { service_name: 'API Gateway', uptime_percentage: 99.8, total_checks: 1000, successful_checks: 998 },
+                    { service_name: 'Database', uptime_percentage: 99.9, total_checks: 1000, successful_checks: 999 },
+                    { service_name: 'User Dashboard', uptime_percentage: 99.7, total_checks: 1000, successful_checks: 997 },
+                    { service_name: 'Analytics Engine', uptime_percentage: 99.6, total_checks: 1000, successful_checks: 996 },
+                    { service_name: 'Security Services', uptime_percentage: 99.9, total_checks: 1000, successful_checks: 999 }
+                ];
+
+                // Insert data
+                const { error: statusError } = await supabase
+                    .from('system_status')
+                    .upsert(systemStatusData, { onConflict: 'service_name' });
+
+                const { error: incidentsError } = await supabase
+                    .from('incidents')
+                    .upsert(incidentsData);
+
+                const { error: uptimeError } = await supabase
+                    .from('uptime_stats')
+                    .upsert(uptimeStatsData, { onConflict: 'service_name' });
+
+                if (statusError || incidentsError || uptimeError) {
+                    throw new Error(`Status: ${statusError?.message}, Incidents: ${incidentsError?.message}, Uptime: ${uptimeError?.message}`);
+                }
+
+                dataDiv.innerHTML = '✅ Sample data populated successfully!<br><a href="status.html">View Status Page</a>';
+                
+            } catch (error) {
+                dataDiv.innerHTML = `❌ Error populating data: ${error.message}`;
+            }
+        }
+
+        // Run initial tests
+        window.addEventListener('load', async function() {
+            console.log('Running connection tests...');
+            
+            // Test 1: Configuration
+            const configOk = testConfig();
+            
+            if (configOk) {
+                // Test 2: Connection
+                const connectionOk = await testConnection();
+                
+                if (connectionOk) {
+                    // Test 3: Tables
+                    testTables();
+                    
+                    // Test 4: Data
+                    testData();
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

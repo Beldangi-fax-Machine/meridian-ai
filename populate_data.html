@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Populate Status Data - Meridian AI</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a0a0a 0%, #2d0f0f 50%, #1a0a0a 100%);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .populate-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .populate-container h1 {
+            color: #ff6b6b;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .populate-container p {
+            color: #cccccc;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .btn-populate {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: #ffffff;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .btn-populate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-populate:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: rgba(46, 213, 115, 0.2);
+            color: #2ed573;
+            border: 1px solid rgba(46, 213, 115, 0.3);
+        }
+
+        .status-error {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #ff6b6b;
+            text-decoration: none;
+            font-weight: 500;
+            margin-top: 20px;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #ff8c8c;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="populate-container">
+        <h1><i class="fas fa-database"></i> Populate Status Data</h1>
+        <p>
+            This will populate your Supabase database with sample status data for the Meridian AI status page. 
+            This includes system status, incidents, and uptime statistics.
+        </p>
+        
+        <button class="btn-populate" id="populateBtn" onclick="populateData()">
+            <i class="fas fa-plus"></i> Populate Sample Data
+        </button>
+        
+        <div class="progress-bar" id="progressBar" style="display: none;">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <div id="statusMessage"></div>
+        
+        <a href="status.html" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            Back to Status Page
+        </a>
+    </div>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script>
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function populateData() {
+            const btn = document.getElementById('populateBtn');
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            const statusMessage = document.getElementById('statusMessage');
+
+            try {
+                // Disable button and show progress
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Populating...';
+                progressBar.style.display = 'block';
+                statusMessage.innerHTML = '';
+
+                // 1. Insert system status data
+                progressFill.style.width = '20%';
+                const systemStatusData = [
+                    { service_name: 'AI Core Engine', status: 'operational', response_time: 85 },
+                    { service_name: 'API Gateway', status: 'operational', response_time: 45 },
+                    { service_name: 'Database', status: 'operational', response_time: 120 },
+                    { service_name: 'User Dashboard', status: 'operational', response_time: 65 },
+                    { service_name: 'Analytics Engine', status: 'operational', response_time: 95 },
+                    { service_name: 'Security Services', status: 'operational', response_time: 55 }
+                ];
+
+                const { error: statusError } = await supabase
+                    .from('system_status')
+                    .upsert(systemStatusData, { onConflict: 'service_name' });
+
+                if (statusError) throw new Error(`System status: ${statusError.message}`);
+
+                // 2. Insert incidents data
+                progressFill.style.width = '50%';
+                const incidentsData = [
+                    {
+                        title: 'Scheduled Maintenance Completed',
+                        description: 'Routine system maintenance has been completed successfully. All services are now operating normally.',
+                        severity: 'low',
+                        status: 'resolved',
+                        affected_services: ['All Services']
+                    },
+                    {
+                        title: 'Performance Optimization',
+                        description: 'Database performance optimizations have been implemented, resulting in improved response times.',
+                        severity: 'low',
+                        status: 'resolved',
+                        affected_services: ['Database']
+                    },
+                    {
+                        title: 'Security Update Deployed',
+                        description: 'Latest security patches have been applied to all systems. No service interruption occurred.',
+                        severity: 'low',
+                        status: 'resolved',
+                        affected_services: ['Security Services']
+                    }
+                ];
+
+                const { error: incidentsError } = await supabase
+                    .from('incidents')
+                    .upsert(incidentsData);
+
+                if (incidentsError) throw new Error(`Incidents: ${incidentsError.message}`);
+
+                // 3. Insert uptime stats data
+                progressFill.style.width = '80%';
+                const uptimeStatsData = [
+                    { service_name: 'AI Core Engine', uptime_percentage: 99.9, total_checks: 1000, successful_checks: 999 },
+                    { service_name: 'API Gateway', uptime_percentage: 99.8, total_checks: 1000, successful_checks: 998 },
+                    { service_name: 'Database', uptime_percentage: 99.9, total_checks: 1000, successful_checks: 999 },
+                    { service_name: 'User Dashboard', uptime_percentage: 99.7, total_checks: 1000, successful_checks: 997 },
+                    { service_name: 'Analytics Engine', uptime_percentage: 99.6, total_checks: 1000, successful_checks: 996 },
+                    { service_name: 'Security Services', uptime_percentage: 99.9, total_checks: 1000, successful_checks: 999 }
+                ];
+
+                const { error: uptimeError } = await supabase
+                    .from('uptime_stats')
+                    .upsert(uptimeStatsData, { onConflict: 'service_name' });
+
+                if (uptimeError) throw new Error(`Uptime stats: ${uptimeError.message}`);
+
+                // Success
+                progressFill.style.width = '100%';
+                statusMessage.innerHTML = `
+                    <div class="status-success">
+                        <i class="fas fa-check-circle"></i>
+                        <strong>Success!</strong> All sample data has been populated successfully.
+                        <br><br>
+                        <a href="status.html" style="color: #2ed573; text-decoration: none; font-weight: 600;">
+                            View Status Page →
+                        </a>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error populating data:', error);
+                statusMessage.innerHTML = `
+                    <div class="status-error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            } finally {
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-plus"></i> Populate Sample Data';
+                
+                // Hide progress bar after a delay
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 2000);
+            }
+        }
+    </script>
+</body>
+</html> 

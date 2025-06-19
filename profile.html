@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | Meridian AI</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .profile-page {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a0a0a 0%, #2d0f0f 50%, #1a0a0a 100%);
+            color: #ffffff;
+        }
+
+        .profile-header {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(220, 20, 60, 0.3);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-btn {
+            background: rgba(220, 20, 60, 0.2);
+            border: 1px solid rgba(220, 20, 60, 0.5);
+            color: #DC143C;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn:hover {
+            background: rgba(220, 20, 60, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .profile-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .profile-title {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .profile-title h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #DC143C, #B22222);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .profile-title p {
+            color: #B0B0B0;
+            font-size: 1.1rem;
+        }
+
+        .profile-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        .profile-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #DC143C;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            margin-bottom: 20px;
+        }
+
+        .info-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #B0B0B0;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            color: #ffffff;
+            font-weight: 500;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .avatar-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .avatar-display {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #DC143C, #B22222);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: white;
+            margin: 0 auto 20px;
+            border: 6px solid rgba(220, 20, 60, 0.3);
+            box-shadow: 0 10px 30px rgba(220, 20, 60, 0.2);
+        }
+
+        .avatar-display img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .user-name-display {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+
+        .user-email-display {
+            font-size: 1.1rem;
+            color: #B0B0B0;
+        }
+
+        .bio-section {
+            margin-bottom: 30px;
+        }
+
+        .bio-content {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #ffffff;
+            min-height: 80px;
+        }
+
+        .empty-bio {
+            color: #B0B0B0;
+            font-style: italic;
+        }
+
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-item {
+            background: rgba(220, 20, 60, 0.1);
+            border: 1px solid rgba(220, 20, 60, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #DC143C;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #B0B0B0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 768px) {
+            .info-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .profile-card {
+                padding: 30px 20px;
+            }
+            
+            .stats-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-page">
+        <!-- Loading Screen -->
+        <div id="loadingScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+            <div style="text-align: center; color: white;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="profile-header">
+            <div class="header-content">
+                <a href="home.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Dashboard
+                </a>
+                <div style="font-weight: 600; color: #DC143C;">User Profile</div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="profile-content">
+            <div class="profile-title">
+                <h1>User Profile</h1>
+                <p>Your account information and preferences</p>
+            </div>
+
+            <div class="profile-card">
+                <!-- Avatar Section -->
+                <div class="avatar-section">
+                    <div class="avatar-display" id="avatarDisplay">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-name-display" id="userNameDisplay">Loading...</div>
+                    <div class="user-email-display" id="userEmailDisplay">loading@example.com</div>
+                </div>
+
+                <!-- Personal Information -->
+                <div class="profile-section">
+                    <div class="section-title">
+                        <i class="fas fa-user"></i>
+                        Personal Information
+                    </div>
+                    <div class="info-row">
+                        <div class="info-item">
+                            <div class="info-label">First Name</div>
+                            <div class="info-value" id="firstNameDisplay">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Last Name</div>
+                            <div class="info-value" id="lastNameDisplay">-</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Email Address</div>
+                        <div class="info-value" id="emailDisplay">-</div>
+                    </div>
+                </div>
+
+                <!-- Bio Section -->
+                <div class="bio-section">
+                    <div class="section-title">
+                        <i class="fas fa-quote-left"></i>
+                        Bio
+                    </div>
+                    <div class="bio-content" id="bioDisplay">
+                        <span class="empty-bio">No bio added yet</span>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="profile-section">
+                    <div class="section-title">
+                        <i class="fas fa-phone"></i>
+                        Contact Information
+                    </div>
+                    <div class="info-row">
+                        <div class="info-item">
+                            <div class="info-label">Phone Number</div>
+                            <div class="info-value" id="phoneDisplay">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Location</div>
+                            <div class="info-value" id="locationDisplay">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preferences -->
+                <div class="profile-section">
+                    <div class="section-title">
+                        <i class="fas fa-cog"></i>
+                        Preferences
+                    </div>
+                    <div class="info-row">
+                        <div class="info-item">
+                            <div class="info-label">Timezone</div>
+                            <div class="info-value" id="timezoneDisplay">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Language</div>
+                            <div class="info-value" id="languageDisplay">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Stats -->
+                <div class="profile-section">
+                    <div class="section-title">
+                        <i class="fas fa-chart-bar"></i>
+                        Account Statistics
+                    </div>
+                    <div class="stats-section">
+                        <div class="stat-item">
+                            <div class="stat-number" id="memberSince">-</div>
+                            <div class="stat-label">Member Since</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="lastLogin">-</div>
+                            <div class="stat-label">Last Login</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="profileComplete">-</div>
+                            <div class="stat-label">Profile Complete</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // DOM elements
+        const loadingScreen = document.getElementById('loadingScreen');
+        const avatarDisplay = document.getElementById('avatarDisplay');
+        const userNameDisplay = document.getElementById('userNameDisplay');
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
+        const firstNameDisplay = document.getElementById('firstNameDisplay');
+        const lastNameDisplay = document.getElementById('lastNameDisplay');
+        const emailDisplay = document.getElementById('emailDisplay');
+        const bioDisplay = document.getElementById('bioDisplay');
+        const phoneDisplay = document.getElementById('phoneDisplay');
+        const locationDisplay = document.getElementById('locationDisplay');
+        const timezoneDisplay = document.getElementById('timezoneDisplay');
+        const languageDisplay = document.getElementById('languageDisplay');
+        const memberSince = document.getElementById('memberSince');
+        const lastLogin = document.getElementById('lastLogin');
+        const profileComplete = document.getElementById('profileComplete');
+
+        // Check authentication on page load
+        window.addEventListener('load', async () => {
+            try {
+                // First check localStorage for user session
+                const storedUser = localStorage.getItem('meridian_user');
+                if (!storedUser) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Verify with Supabase that the session is still valid
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (error || !user) {
+                    localStorage.removeItem('meridian_user');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Load and display user profile data
+                await displayUserProfile(user);
+                
+                // Hide loading screen
+                loadingScreen.style.display = 'none';
+
+            } catch (error) {
+                console.error('Auth check error:', error);
+                localStorage.removeItem('meridian_user');
+                window.location.href = 'login.html';
+            }
+        });
+
+        // Display user profile data
+        async function displayUserProfile(user) {
+            try {
+                // Set basic user info
+                const email = user.email || 'No email';
+                const metadata = user.user_metadata || {};
+                const firstName = metadata.first_name || '';
+                const lastName = metadata.last_name || '';
+                const fullName = firstName && lastName ? `${firstName} ${lastName}` : email.split('@')[0];
+                
+                // Update display elements
+                userEmailDisplay.textContent = email;
+                emailDisplay.textContent = email;
+                userNameDisplay.textContent = fullName;
+                firstNameDisplay.textContent = firstName || 'Not set';
+                lastNameDisplay.textContent = lastName || 'Not set';
+
+                // Set avatar
+                if (metadata.avatar_url) {
+                    avatarDisplay.innerHTML = `<img src="${metadata.avatar_url}" alt="Avatar">`;
+                } else {
+                    const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+                    avatarDisplay.innerHTML = initials || '<i class="fas fa-user"></i>';
+                }
+
+                // Try to get profile data from Supabase
+                const { data: profile, error } = await supabase
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (profile && !error) {
+                    // Display profile data
+                    bioDisplay.innerHTML = profile.bio ? profile.bio : '<span class="empty-bio">No bio added yet</span>';
+                    phoneDisplay.textContent = profile.phone || 'Not set';
+                    locationDisplay.textContent = profile.location || 'Not set';
+                    timezoneDisplay.textContent = profile.timezone || 'Not set';
+                    languageDisplay.textContent = getLanguageName(profile.language) || 'English';
+
+                    // Update avatar if exists in profile
+                    if (profile.avatar_url) {
+                        avatarDisplay.innerHTML = `<img src="${profile.avatar_url}" alt="Avatar">`;
+                    }
+                } else {
+                    // Use fallback values
+                    bioDisplay.innerHTML = '<span class="empty-bio">No bio added yet</span>';
+                    phoneDisplay.textContent = 'Not set';
+                    locationDisplay.textContent = 'Not set';
+                    timezoneDisplay.textContent = 'Not set';
+                    languageDisplay.textContent = 'English';
+                }
+
+                // Set account statistics
+                const createdAt = new Date(user.created_at);
+                memberSince.textContent = createdAt.toLocaleDateString();
+                
+                const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at) : new Date();
+                lastLogin.textContent = lastSignIn.toLocaleDateString();
+
+                // Calculate profile completion percentage
+                const profileFields = [firstName, lastName, profile?.bio, profile?.phone, profile?.location, profile?.timezone];
+                const filledFields = profileFields.filter(field => field && field.trim() !== '').length;
+                const completionPercentage = Math.round((filledFields / profileFields.length) * 100);
+                profileComplete.textContent = `${completionPercentage}%`;
+
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+
+        // Helper function to get language name
+        function getLanguageName(code) {
+            const languages = {
+                'en': 'English',
+                'es': 'Spanish',
+                'fr': 'French',
+                'de': 'German',
+                'it': 'Italian',
+                'pt': 'Portuguese',
+                'ja': 'Japanese',
+                'ko': 'Korean',
+                'zh': 'Chinese'
+            };
+            return languages[code] || code;
+        }
+
+        // Periodic authentication check
+        setInterval(async () => {
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (error || !user) {
+                    localStorage.removeItem('meridian_user');
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('Periodic auth check error:', error);
+            }
+        }, 5 * 60 * 1000);
+    </script>
+</body>
+</html> 

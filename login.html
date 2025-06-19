@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Meridian AI</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #8B0000 0%, #DC143C 50%, #B22222 100%);
+            font-family: 'Inter', sans-serif;
+        }
+        .login-container {
+            background: rgba(20, 20, 20, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            padding: 48px 32px 32px 32px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(220, 20, 60, 0.3);
+        }
+        .login-container h2 {
+            color: #fff;
+            margin-bottom: 32px;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .form-group {
+            position: relative;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 8px;
+            border: 1px solid #DC143C;
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        .form-group input:focus {
+            border-color: #fff;
+            box-shadow: 0 0 20px rgba(220, 20, 60, 0.3);
+        }
+        .form-group input::placeholder {
+            color: #B0B0B0;
+        }
+        .login-form button {
+            padding: 14px 0;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, #DC143C 0%, #B22222 100%);
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .login-form button:hover {
+            background: linear-gradient(135deg, #B22222 0%, #DC143C 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(220, 20, 60, 0.4);
+        }
+        .login-form button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .error-message {
+            color: #ff6b6b;
+            font-size: 0.9rem;
+            margin-top: 8px;
+            display: none;
+        }
+        .success-message {
+            color: #51cf66;
+            font-size: 0.9rem;
+            margin-top: 8px;
+            display: none;
+        }
+        .loading {
+            display: none;
+            margin-left: 8px;
+        }
+        .back-link {
+            margin-top: 24px;
+            color: #B0B0B0;
+            font-size: 0.95rem;
+        }
+        .back-link a {
+            color: #DC143C;
+            text-decoration: none;
+            margin-left: 4px;
+            transition: color 0.3s ease;
+        }
+        .back-link a:hover {
+            color: #fff;
+        }
+        .password-toggle {
+            background: rgba(220, 20, 60, 0.1);
+            border: 1px solid rgba(220, 20, 60, 0.3);
+            border-radius: 50%;
+            color: #B0B0B0;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            padding: 8px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            margin-top: -5px;
+            margin-bottom: 5px;
+        }
+        .password-toggle:hover {
+            color: #DC143C;
+            background: rgba(220, 20, 60, 0.2);
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Sign in to Meridian AI</h2>
+        <form class="login-form" id="loginForm" autocomplete="off">
+            <div class="form-group">
+                <input type="email" id="email" placeholder="Email Address" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="password" placeholder="Password" required minlength="6">
+            </div>
+            <button type="button" class="password-toggle" id="passwordToggle">
+                <i class="fas fa-eye"></i>
+            </button>
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+            <button type="submit" id="loginButton">
+                <span>Login</span>
+                <i class="fas fa-spinner fa-spin loading" id="loadingIcon"></i>
+            </button>
+        </form>
+        <div class="back-link">
+            <a href="index.html"><i class="fas fa-arrow-left"></i> Back to Home</a>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // DOM elements
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const passwordToggle = document.getElementById('passwordToggle');
+        const loginButton = document.getElementById('loginButton');
+        const loadingIcon = document.getElementById('loadingIcon');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+
+        // Password toggle functionality
+        passwordToggle.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            passwordToggle.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+        });
+
+        // Form submission
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            // Clear previous messages
+            hideMessages();
+
+            // Basic validation
+            if (!email || !password) {
+                showError('Please fill in all fields');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters long');
+                return;
+            }
+
+            // Show loading state
+            setLoading(true);
+
+            try {
+                // Attempt to sign in with Supabase
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                // Success
+                showSuccess('Login successful! Redirecting...');
+                
+                // Store user session
+                localStorage.setItem('meridian_user', JSON.stringify(data.user));
+                
+                // Redirect to dashboard or main page after a short delay
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error('Login error:', error);
+                
+                // Handle specific error types
+                let errorMsg = 'Login failed. Please try again.';
+                
+                if (error.message.includes('Invalid login credentials')) {
+                    errorMsg = 'Invalid email or password';
+                } else if (error.message.includes('Email not confirmed')) {
+                    errorMsg = 'Please verify your email address';
+                } else if (error.message.includes('Too many requests')) {
+                    errorMsg = 'Too many login attempts. Please try again later.';
+                }
+                
+                showError(errorMsg);
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // Helper functions
+        function setLoading(loading) {
+            loginButton.disabled = loading;
+            loadingIcon.style.display = loading ? 'inline-block' : 'none';
+            loginButton.querySelector('span').textContent = loading ? 'Logging in...' : 'Login';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        // Check if user is already logged in
+        window.addEventListener('load', () => {
+            const user = localStorage.getItem('meridian_user');
+            if (user) {
+                // User is already logged in, redirect to main page
+                window.location.href = 'home.html';
+            }
+        });
+    </script>
+</body>
+</html> 
