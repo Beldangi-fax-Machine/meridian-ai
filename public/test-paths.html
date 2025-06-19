@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Path Test - Meridian AI</title>
+    <link rel="stylesheet" href="../styles/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container" style="padding: 50px; text-align: center;">
+        <h1 style="color: #DC143C;">Path Test - Meridian AI</h1>
+        <p style="color: #ffffff; margin: 20px 0;">Testing all file paths in the organized structure...</p>
+        
+        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; margin: 20px 0;">
+            <h3 style="color: #DC143C;">✅ CSS Loaded Successfully</h3>
+            <p style="color: #B0B0B0;">If you see styled content, the CSS path is working.</p>
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <a href="index.html" class="btn btn-primary" style="margin: 10px;">Home Page</a>
+            <a href="login.html" class="btn btn-secondary" style="margin: 10px;">Login Page</a>
+            <a href="home.html" class="btn btn-secondary" style="margin: 10px;">Dashboard</a>
+            <a href="profile.html" class="btn btn-secondary" style="margin: 10px;">Profile</a>
+            <a href="status.html" class="btn btn-secondary" style="margin: 10px;">Status</a>
+        </div>
+        
+        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; margin: 20px 0;">
+            <h3 style="color: #DC143C;">📁 File Structure</h3>
+            <p style="color: #B0B0B0; text-align: left; font-family: monospace;">
+                Oriyon/<br>
+                ├── public/ (HTML files)<br>
+                ├── scripts/ (JavaScript files)<br>
+                ├── styles/ (CSS files)<br>
+                └── db/ (SQL files)
+            </p>
+        </div>
+    </div>
+    
+    <script src="../scripts/config.js"></script>
+    <script>
+        console.log('✅ JavaScript loaded successfully');
+        console.log('✅ Config file loaded:', typeof SUPABASE_URL !== 'undefined' ? 'Yes' : 'No');
+    </script>
+</body>
+</html> 
