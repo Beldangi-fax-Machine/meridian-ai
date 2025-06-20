@@ -437,47 +437,58 @@
         // Check authentication on page load
         window.addEventListener('load', async () => {
             try {
-                // First check localStorage for user session
+                // Quick check for stored user session
                 const storedUser = localStorage.getItem('meridian_user');
                 if (!storedUser) {
-                    // No stored session, redirect to login
                     window.location.href = 'login.html';
                     return;
                 }
 
-                // Verify with Supabase that the session is still valid
-                const { data: { user }, error } = await supabase.auth.getUser();
-                
-                if (error || !user) {
-                    // Session invalid, clear storage and redirect to login
-                    localStorage.removeItem('meridian_user');
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                // Additional check: verify the stored user matches the current session
+                // Parse stored user data
                 const parsedStoredUser = JSON.parse(storedUser);
-                if (parsedStoredUser.id !== user.id) {
-                    // User mismatch, clear storage and redirect to login
-                    localStorage.removeItem('meridian_user');
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                // User is properly authenticated, update UI
-                updateUserInfo(user);
-                await loadDashboardData();
                 
-                // Hide loading screen
+                // Update UI immediately with stored data to reduce loading time
+                updateUserInfo(parsedStoredUser);
+                
+                // Load dashboard data with fallback (don't wait for auth check)
+                loadDashboardData();
+                
+                // Hide loading screen immediately
                 loadingScreen.style.display = 'none';
+
+                // Verify session in background (non-blocking)
+                verifySessionInBackground();
 
             } catch (error) {
                 console.error('Auth check error:', error);
-                // Clear any corrupted session data
                 localStorage.removeItem('meridian_user');
                 window.location.href = 'login.html';
             }
         });
+
+        // Background session verification (non-blocking)
+        async function verifySessionInBackground() {
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (error || !user) {
+                    localStorage.removeItem('meridian_user');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const storedUser = localStorage.getItem('meridian_user');
+                if (storedUser) {
+                    const parsedStoredUser = JSON.parse(storedUser);
+                    if (parsedStoredUser.id !== user.id) {
+                        localStorage.removeItem('meridian_user');
+                        window.location.href = 'login.html';
+                    }
+                }
+            } catch (error) {
+                console.error('Background auth check error:', error);
+            }
+        }
 
         // Update user information
         function updateUserInfo(user) {
@@ -490,29 +501,31 @@
 
         // Load dashboard data
         async function loadDashboardData() {
+            // Show fallback data immediately to prevent loading delays
+            updateStats(null, null);
+            initCharts(null, null);
+            
             try {
-                // Fetch system status data
+                // Fetch system status data in background
                 const { data: systemStatus, error: statusError } = await supabase
                     .from('system_status')
                     .select('*')
                     .eq('status', 'operational');
 
-                // Fetch uptime stats
+                // Fetch uptime stats in background
                 const { data: uptimeStats, error: uptimeError } = await supabase
                     .from('uptime_stats')
                     .select('*');
 
-                // Update stats
+                // Update stats with real data (if available)
                 updateStats(systemStatus, uptimeStats);
                 
-                // Initialize charts
+                // Initialize charts with real data (if available)
                 initCharts(systemStatus, uptimeStats);
 
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
-                // Use fallback data
-                updateStats(null, null);
-                initCharts(null, null);
+                // Keep fallback data if there's an error
             }
         }
 
@@ -668,7 +681,7 @@
             }
         });
 
-        // Periodic authentication check (every 5 minutes)
+        // Periodic authentication check (every 30 minutes)
         setInterval(async () => {
             try {
                 const { data: { user }, error } = await supabase.auth.getUser();
@@ -680,7 +693,7 @@
             } catch (error) {
                 console.error('Periodic auth check error:', error);
             }
-        }, 5 * 60 * 1000); // 5 minutes
+        }, 30 * 60 * 1000); // 30 minutes
 
         // Listen for authentication state changes
         supabase.auth.onAuthStateChange((event, session) => {
