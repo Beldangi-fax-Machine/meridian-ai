@@ -306,14 +306,13 @@
             }
             
             try {
-                // Check for existing session
+                // Check for existing session but don't auto-redirect
                 const { data: { user }, error } = await supabase.auth.getUser();
                 
                 if (user && !error) {
-                    console.log('User is authenticated, redirecting to home page');
-                    // Store user data and redirect to home page
+                    console.log('User is authenticated but not auto-redirecting for security');
+                    // Store user data but don't redirect - let user choose to login manually
                     localStorage.setItem('meridian_user', JSON.stringify(user));
-                    window.location.href = 'home.html';
                 } else {
                     console.log('User not authenticated, clearing session data');
                     localStorage.removeItem('meridian_user');

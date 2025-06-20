@@ -466,10 +466,15 @@
             }, 3000); // 3 second timeout
 
             try {
-                // Quick check for stored user session
+                // Check for stored user session
                 const storedUser = localStorage.getItem('meridian_user');
                 if (!storedUser) {
-                    window.location.href = 'login.html';
+                    console.log('No stored user session found - showing login prompt');
+                    // Hide loading screen and show login prompt instead of redirecting
+                    if (loadingScreen) {
+                        loadingScreen.style.display = 'none';
+                    }
+                    showLoginPrompt();
                     return;
                 }
 
@@ -497,9 +502,70 @@
                     loadingScreen.style.display = 'none';
                 }
                 localStorage.removeItem('meridian_user');
-                window.location.href = 'login.html';
+                showLoginPrompt();
             }
         });
+
+        // Show login prompt instead of redirecting
+        function showLoginPrompt() {
+            // Create a login prompt overlay
+            const loginPrompt = document.createElement('div');
+            loginPrompt.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                backdrop-filter: blur(10px);
+            `;
+            
+            loginPrompt.innerHTML = `
+                <div style="
+                    background: rgba(20, 20, 20, 0.95);
+                    border-radius: 20px;
+                    padding: 40px;
+                    text-align: center;
+                    max-width: 400px;
+                    border: 1px solid rgba(220, 20, 60, 0.3);
+                ">
+                    <h2 style="color: #fff; margin-bottom: 20px; font-size: 1.8rem;">Welcome to Meridian AI</h2>
+                    <p style="color: #B0B0B0; margin-bottom: 30px; line-height: 1.6;">
+                        Please sign in to access your dashboard and manage your account.
+                    </p>
+                    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                        <a href="login.html" style="
+                            background: linear-gradient(135deg, #DC143C 0%, #B22222 100%);
+                            color: white;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            text-decoration: none;
+                            font-weight: 600;
+                            transition: all 0.3s ease;
+                        " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            <i class="fas fa-sign-in-alt"></i> Sign In
+                        </a>
+                        <a href="index.html" style="
+                            background: rgba(255,255,255,0.1);
+                            color: #B0B0B0;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            text-decoration: none;
+                            font-weight: 600;
+                            transition: all 0.3s ease;
+                        " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            <i class="fas fa-home"></i> Go Home
+                        </a>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(loginPrompt);
+        }
 
         // Background session verification (non-blocking)
         async function verifySessionInBackground() {
@@ -512,8 +578,9 @@
                 const { data: { user }, error } = await supabase.auth.getUser();
                 
                 if (error || !user) {
+                    console.log('Session verification failed - clearing local data');
                     localStorage.removeItem('meridian_user');
-                    window.location.href = 'login.html';
+                    // Don't redirect automatically - let user choose
                     return;
                 }
 
@@ -521,8 +588,9 @@
                 if (storedUser) {
                     const parsedStoredUser = JSON.parse(storedUser);
                     if (parsedStoredUser.id !== user.id) {
+                        console.log('User ID mismatch - clearing local data');
                         localStorage.removeItem('meridian_user');
-                        window.location.href = 'login.html';
+                        // Don't redirect automatically - let user choose
                     }
                 }
             } catch (error) {
