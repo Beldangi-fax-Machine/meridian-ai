@@ -93,14 +93,78 @@
             margin-bottom: 30px;
         }
 
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
         .section-title {
             font-size: 1.3rem;
             font-weight: 600;
             color: #DC143C;
-            margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
+        }
+
+        .edit-btn {
+            background: rgba(220, 20, 60, 0.2);
+            border: 1px solid rgba(220, 20, 60, 0.5);
+            color: #DC143C;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .edit-btn:hover {
+            background: rgba(220, 20, 60, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .save-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .cancel-btn {
+            background: rgba(108, 117, 125, 0.2);
+            border: 1px solid rgba(108, 117, 125, 0.5);
+            color: #6c757d;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .cancel-btn:hover {
+            background: rgba(108, 117, 125, 0.3);
+            transform: translateY(-1px);
         }
 
         .info-row {
@@ -134,6 +198,45 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
+        .info-input {
+            width: 100%;
+            font-size: 1.1rem;
+            color: #ffffff;
+            font-weight: 500;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(220, 20, 60, 0.3);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .info-input:focus {
+            outline: none;
+            border-color: #DC143C;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .info-textarea {
+            width: 100%;
+            min-height: 100px;
+            font-size: 1rem;
+            color: #ffffff;
+            font-weight: 400;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(220, 20, 60, 0.3);
+            border-radius: 8px;
+            resize: vertical;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .info-textarea:focus {
+            outline: none;
+            border-color: #DC143C;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
         .avatar-section {
             text-align: center;
             margin-bottom: 40px;
@@ -152,6 +255,13 @@
             margin: 0 auto 20px;
             border: 6px solid rgba(220, 20, 60, 0.3);
             box-shadow: 0 10px 30px rgba(220, 20, 60, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .avatar-display:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(220, 20, 60, 0.3);
         }
 
         .avatar-display img {
@@ -222,6 +332,32 @@
             letter-spacing: 0.5px;
         }
 
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #DC143C, #B22222);
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
         @media (max-width: 768px) {
             .info-row {
                 grid-template-columns: 1fr;
@@ -233,6 +369,12 @@
             
             .stats-section {
                 grid-template-columns: 1fr;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
             }
         }
     </style>
@@ -277,70 +419,90 @@
 
                 <!-- Personal Information -->
                 <div class="profile-section">
-                    <div class="section-title">
-                        <i class="fas fa-user"></i>
-                        Personal Information
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-user"></i>
+                            Personal Information
+                        </div>
+                        <button class="edit-btn" onclick="toggleEdit('personal')" id="editPersonalBtn">
+                            <i class="fas fa-edit"></i>
+                            Edit
+                        </button>
                     </div>
                     <div class="info-row">
                         <div class="info-item">
-                            <div class="info-label">First Name</div>
-                            <div class="info-value" id="firstNameDisplay">-</div>
+                            <div class="info-label">Full Name</div>
+                            <div class="info-value" id="fullNameDisplay">-</div>
+                            <input type="text" class="info-input" id="fullNameInput" style="display: none;" placeholder="Enter your full name">
                         </div>
                         <div class="info-item">
-                            <div class="info-label">Last Name</div>
-                            <div class="info-value" id="lastNameDisplay">-</div>
+                            <div class="info-label">Username</div>
+                            <div class="info-value" id="usernameDisplay">-</div>
+                            <input type="text" class="info-input" id="usernameInput" style="display: none;" placeholder="Enter username">
                         </div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Email Address</div>
                         <div class="info-value" id="emailDisplay">-</div>
                     </div>
+                    <div class="info-item">
+                        <div class="info-label">Company</div>
+                        <div class="info-value" id="companyDisplay">-</div>
+                        <input type="text" class="info-input" id="companyInput" style="display: none;" placeholder="Enter your company">
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Job Title</div>
+                        <div class="info-value" id="jobTitleDisplay">-</div>
+                        <input type="text" class="info-input" id="jobTitleInput" style="display: none;" placeholder="Enter your job title">
+                    </div>
                 </div>
 
                 <!-- Bio Section -->
                 <div class="bio-section">
-                    <div class="section-title">
-                        <i class="fas fa-quote-left"></i>
-                        Bio
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-quote-left"></i>
+                            Bio
+                        </div>
+                        <button class="edit-btn" onclick="toggleEdit('bio')" id="editBioBtn">
+                            <i class="fas fa-edit"></i>
+                            Edit
+                        </button>
                     </div>
                     <div class="bio-content" id="bioDisplay">
                         <span class="empty-bio">No bio added yet</span>
                     </div>
+                    <textarea class="info-textarea" id="bioInput" style="display: none;" placeholder="Tell us about yourself..."></textarea>
                 </div>
 
                 <!-- Contact Information -->
                 <div class="profile-section">
-                    <div class="section-title">
-                        <i class="fas fa-phone"></i>
-                        Contact Information
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-phone"></i>
+                            Contact Information
+                        </div>
+                        <button class="edit-btn" onclick="toggleEdit('contact')" id="editContactBtn">
+                            <i class="fas fa-edit"></i>
+                            Edit
+                        </button>
                     </div>
                     <div class="info-row">
                         <div class="info-item">
                             <div class="info-label">Phone Number</div>
                             <div class="info-value" id="phoneDisplay">-</div>
+                            <input type="tel" class="info-input" id="phoneInput" style="display: none;" placeholder="Enter phone number">
                         </div>
                         <div class="info-item">
                             <div class="info-label">Location</div>
                             <div class="info-value" id="locationDisplay">-</div>
+                            <input type="text" class="info-input" id="locationInput" style="display: none;" placeholder="Enter your location">
                         </div>
                     </div>
-                </div>
-
-                <!-- Preferences -->
-                <div class="profile-section">
-                    <div class="section-title">
-                        <i class="fas fa-cog"></i>
-                        Preferences
-                    </div>
-                    <div class="info-row">
-                        <div class="info-item">
-                            <div class="info-label">Timezone</div>
-                            <div class="info-value" id="timezoneDisplay">-</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Language</div>
-                            <div class="info-value" id="languageDisplay">-</div>
-                        </div>
+                    <div class="info-item">
+                        <div class="info-label">Website</div>
+                        <div class="info-value" id="websiteDisplay">-</div>
+                        <input type="url" class="info-input" id="websiteInput" style="display: none;" placeholder="Enter your website URL">
                     </div>
                 </div>
 
@@ -370,48 +532,76 @@
     </div>
 
     <script src="../scripts/config.js"></script>
+    <script src="../scripts/user_management.js"></script>
     <script>
-        // Initialize Supabase client
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Initialize Supabase client and UserManager
+        let supabase;
+        let userManager;
+        let currentUser = null;
+
+        try {
+            if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined') {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                userManager = new UserManager(supabase);
+            } else {
+                console.warn('Supabase configuration not found');
+            }
+        } catch (error) {
+            console.error('Error initializing Supabase:', error);
+        }
 
         // DOM elements
         const loadingScreen = document.getElementById('loadingScreen');
         const avatarDisplay = document.getElementById('avatarDisplay');
         const userNameDisplay = document.getElementById('userNameDisplay');
         const userEmailDisplay = document.getElementById('userEmailDisplay');
-        const firstNameDisplay = document.getElementById('firstNameDisplay');
-        const lastNameDisplay = document.getElementById('lastNameDisplay');
+        const fullNameDisplay = document.getElementById('fullNameDisplay');
+        const usernameDisplay = document.getElementById('usernameDisplay');
         const emailDisplay = document.getElementById('emailDisplay');
+        const companyDisplay = document.getElementById('companyDisplay');
+        const jobTitleDisplay = document.getElementById('jobTitleDisplay');
         const bioDisplay = document.getElementById('bioDisplay');
         const phoneDisplay = document.getElementById('phoneDisplay');
         const locationDisplay = document.getElementById('locationDisplay');
-        const timezoneDisplay = document.getElementById('timezoneDisplay');
-        const languageDisplay = document.getElementById('languageDisplay');
+        const websiteDisplay = document.getElementById('websiteDisplay');
         const memberSince = document.getElementById('memberSince');
         const lastLogin = document.getElementById('lastLogin');
         const profileComplete = document.getElementById('profileComplete');
 
+        // Input elements
+        const fullNameInput = document.getElementById('fullNameInput');
+        const usernameInput = document.getElementById('usernameInput');
+        const companyInput = document.getElementById('companyInput');
+        const jobTitleInput = document.getElementById('jobTitleInput');
+        const bioInput = document.getElementById('bioInput');
+        const phoneInput = document.getElementById('phoneInput');
+        const locationInput = document.getElementById('locationInput');
+        const websiteInput = document.getElementById('websiteInput');
+
         // Check authentication on page load
         window.addEventListener('load', async () => {
             try {
-                // First check localStorage for user session
+                // Quick check for stored user session
                 const storedUser = localStorage.getItem('meridian_user');
                 if (!storedUser) {
                     window.location.href = 'login.html';
                     return;
                 }
 
-                // Verify with Supabase that the session is still valid
-                const { data: { user }, error } = await supabase.auth.getUser();
-                
-                if (error || !user) {
-                    localStorage.removeItem('meridian_user');
-                    window.location.href = 'login.html';
-                    return;
+                // Load user data using UserManager
+                if (userManager) {
+                    currentUser = await userManager.getCurrentUser();
+                    await displayUserProfile(currentUser);
+                } else {
+                    // Fallback to basic auth check
+                    const { data: { user }, error } = await supabase.auth.getUser();
+                    if (error || !user) {
+                        localStorage.removeItem('meridian_user');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    await displayUserProfile(user);
                 }
-
-                // Load and display user profile data
-                await displayUserProfile(user);
                 
                 // Hide loading screen
                 loadingScreen.style.display = 'none';
@@ -428,63 +618,49 @@
             try {
                 // Set basic user info
                 const email = user.email || 'No email';
-                const metadata = user.user_metadata || {};
-                const firstName = metadata.first_name || '';
-                const lastName = metadata.last_name || '';
-                const fullName = firstName && lastName ? `${firstName} ${lastName}` : email.split('@')[0];
+                const fullName = user.full_name || user.user_metadata?.full_name || email.split('@')[0];
+                const username = user.username || user.user_metadata?.username || email.split('@')[0];
                 
                 // Update display elements
                 userEmailDisplay.textContent = email;
                 emailDisplay.textContent = email;
                 userNameDisplay.textContent = fullName;
-                firstNameDisplay.textContent = firstName || 'Not set';
-                lastNameDisplay.textContent = lastName || 'Not set';
+                fullNameDisplay.textContent = fullName || 'Not set';
+                usernameDisplay.textContent = username || 'Not set';
+                companyDisplay.textContent = user.company || 'Not set';
+                jobTitleDisplay.textContent = user.job_title || 'Not set';
+                bioDisplay.innerHTML = user.bio ? user.bio : '<span class="empty-bio">No bio added yet</span>';
+                phoneDisplay.textContent = user.phone || 'Not set';
+                locationDisplay.textContent = user.location || 'Not set';
+                websiteDisplay.textContent = user.website || 'Not set';
+
+                // Set input values
+                fullNameInput.value = fullName || '';
+                usernameInput.value = username || '';
+                companyInput.value = user.company || '';
+                jobTitleInput.value = user.job_title || '';
+                bioInput.value = user.bio || '';
+                phoneInput.value = user.phone || '';
+                locationInput.value = user.location || '';
+                websiteInput.value = user.website || '';
 
                 // Set avatar
-                if (metadata.avatar_url) {
-                    avatarDisplay.innerHTML = `<img src="${metadata.avatar_url}" alt="Avatar">`;
+                if (user.avatar_url) {
+                    avatarDisplay.innerHTML = `<img src="${user.avatar_url}" alt="Avatar">`;
                 } else {
-                    const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+                    const initials = fullName.split(' ').map(n => n.charAt(0)).join('').toUpperCase();
                     avatarDisplay.innerHTML = initials || '<i class="fas fa-user"></i>';
-                }
-
-                // Try to get profile data from Supabase
-                const { data: profile, error } = await supabase
-                    .from('user_profiles')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .single();
-
-                if (profile && !error) {
-                    // Display profile data
-                    bioDisplay.innerHTML = profile.bio ? profile.bio : '<span class="empty-bio">No bio added yet</span>';
-                    phoneDisplay.textContent = profile.phone || 'Not set';
-                    locationDisplay.textContent = profile.location || 'Not set';
-                    timezoneDisplay.textContent = profile.timezone || 'Not set';
-                    languageDisplay.textContent = getLanguageName(profile.language) || 'English';
-
-                    // Update avatar if exists in profile
-                    if (profile.avatar_url) {
-                        avatarDisplay.innerHTML = `<img src="${profile.avatar_url}" alt="Avatar">`;
-                    }
-                } else {
-                    // Use fallback values
-                    bioDisplay.innerHTML = '<span class="empty-bio">No bio added yet</span>';
-                    phoneDisplay.textContent = 'Not set';
-                    locationDisplay.textContent = 'Not set';
-                    timezoneDisplay.textContent = 'Not set';
-                    languageDisplay.textContent = 'English';
                 }
 
                 // Set account statistics
                 const createdAt = new Date(user.created_at);
                 memberSince.textContent = createdAt.toLocaleDateString();
                 
-                const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at) : new Date();
+                const lastSignIn = user.last_login ? new Date(user.last_login) : new Date();
                 lastLogin.textContent = lastSignIn.toLocaleDateString();
 
                 // Calculate profile completion percentage
-                const profileFields = [firstName, lastName, profile?.bio, profile?.phone, profile?.location, profile?.timezone];
+                const profileFields = [fullName, username, user.bio, user.phone, user.location, user.company, user.job_title];
                 const filledFields = profileFields.filter(field => field && field.trim() !== '').length;
                 const completionPercentage = Math.round((filledFields / profileFields.length) * 100);
                 profileComplete.textContent = `${completionPercentage}%`;
@@ -494,34 +670,152 @@
             }
         }
 
-        // Helper function to get language name
-        function getLanguageName(code) {
-            const languages = {
-                'en': 'English',
-                'es': 'Spanish',
-                'fr': 'French',
-                'de': 'German',
-                'it': 'Italian',
-                'pt': 'Portuguese',
-                'ja': 'Japanese',
-                'ko': 'Korean',
-                'zh': 'Chinese'
-            };
-            return languages[code] || code;
+        // Toggle edit mode for different sections
+        function toggleEdit(section) {
+            const editBtn = document.getElementById(`edit${section.charAt(0).toUpperCase() + section.slice(1)}Btn`);
+            const isEditing = editBtn.innerHTML.includes('Save');
+
+            if (isEditing) {
+                // Save changes
+                saveChanges(section);
+            } else {
+                // Enter edit mode
+                enterEditMode(section);
+            }
+        }
+
+        // Enter edit mode
+        function enterEditMode(section) {
+            const editBtn = document.getElementById(`edit${section.charAt(0).toUpperCase() + section.slice(1)}Btn`);
+            
+            if (section === 'personal') {
+                fullNameDisplay.style.display = 'none';
+                usernameDisplay.style.display = 'none';
+                companyDisplay.style.display = 'none';
+                jobTitleDisplay.style.display = 'none';
+                fullNameInput.style.display = 'block';
+                usernameInput.style.display = 'block';
+                companyInput.style.display = 'block';
+                jobTitleInput.style.display = 'block';
+            } else if (section === 'bio') {
+                bioDisplay.style.display = 'none';
+                bioInput.style.display = 'block';
+            } else if (section === 'contact') {
+                phoneDisplay.style.display = 'none';
+                locationDisplay.style.display = 'none';
+                websiteDisplay.style.display = 'none';
+                phoneInput.style.display = 'block';
+                locationInput.style.display = 'block';
+                websiteInput.style.display = 'block';
+            }
+
+            editBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+            editBtn.className = 'save-btn';
+        }
+
+        // Save changes
+        async function saveChanges(section) {
+            try {
+                if (!currentUser || !userManager) {
+                    showNotification('Error: User manager not available', 'error');
+                    return;
+                }
+
+                let updates = {};
+
+                if (section === 'personal') {
+                    updates = {
+                        full_name: fullNameInput.value.trim(),
+                        username: usernameInput.value.trim(),
+                        company: companyInput.value.trim(),
+                        job_title: jobTitleInput.value.trim()
+                    };
+                } else if (section === 'bio') {
+                    updates = {
+                        bio: bioInput.value.trim()
+                    };
+                } else if (section === 'contact') {
+                    updates = {
+                        phone: phoneInput.value.trim(),
+                        location: locationInput.value.trim(),
+                        website: websiteInput.value.trim()
+                    };
+                }
+
+                // Update user data
+                const updatedUser = await userManager.updateUser(currentUser.id, updates);
+                currentUser = updatedUser;
+
+                // Update display
+                await displayUserProfile(updatedUser);
+
+                // Exit edit mode
+                exitEditMode(section);
+
+                showNotification('Profile updated successfully!', 'success');
+
+            } catch (error) {
+                console.error('Error saving changes:', error);
+                showNotification('Error saving changes. Please try again.', 'error');
+            }
+        }
+
+        // Exit edit mode
+        function exitEditMode(section) {
+            const editBtn = document.getElementById(`edit${section.charAt(0).toUpperCase() + section.slice(1)}Btn`);
+            
+            if (section === 'personal') {
+                fullNameDisplay.style.display = 'block';
+                usernameDisplay.style.display = 'block';
+                companyDisplay.style.display = 'block';
+                jobTitleDisplay.style.display = 'block';
+                fullNameInput.style.display = 'none';
+                usernameInput.style.display = 'none';
+                companyInput.style.display = 'none';
+                jobTitleInput.style.display = 'none';
+            } else if (section === 'bio') {
+                bioDisplay.style.display = 'block';
+                bioInput.style.display = 'none';
+            } else if (section === 'contact') {
+                phoneDisplay.style.display = 'block';
+                locationDisplay.style.display = 'block';
+                websiteDisplay.style.display = 'block';
+                phoneInput.style.display = 'none';
+                locationInput.style.display = 'none';
+                websiteInput.style.display = 'none';
+            }
+
+            editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+            editBtn.className = 'edit-btn';
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
         }
 
         // Periodic authentication check
         setInterval(async () => {
             try {
-                const { data: { user }, error } = await supabase.auth.getUser();
-                if (error || !user) {
-                    localStorage.removeItem('meridian_user');
-                    window.location.href = 'login.html';
+                if (supabase) {
+                    const { data: { user }, error } = await supabase.auth.getUser();
+                    if (error || !user) {
+                        localStorage.removeItem('meridian_user');
+                        window.location.href = 'login.html';
+                    }
                 }
             } catch (error) {
                 console.error('Periodic auth check error:', error);
             }
-        }, 5 * 60 * 1000);
+        }, 30 * 60 * 1000); // 30 minutes
     </script>
 </body>
 </html> 
