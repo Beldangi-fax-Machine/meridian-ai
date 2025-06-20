@@ -720,7 +720,7 @@
             try {
                 await supabase.auth.signOut();
                 localStorage.removeItem('meridian_user');
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
             } catch (error) {
                 console.error('Logout error:', error);
             }
@@ -733,7 +733,7 @@
                 if (error || !user) {
                     // Session expired, redirect to login
                     localStorage.removeItem('meridian_user');
-                    window.location.href = 'login.html';
+                    window.location.href = 'index.html';
                 }
             } catch (error) {
                 console.error('Periodic auth check error:', error);
@@ -744,7 +744,7 @@
         supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_OUT') {
                 localStorage.removeItem('meridian_user');
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
             }
         });
 
