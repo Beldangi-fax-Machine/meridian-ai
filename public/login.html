@@ -163,6 +163,11 @@
         <div class="back-link">
             <a href="index.html"><i class="fas fa-arrow-left"></i> Back to Home</a>
             <br><br>
+            <div id="dashboardLink" style="display: none;">
+                <a href="home.html" style="background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block; margin-bottom: 10px;">
+                    <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                </a>
+            </div>
             <button onclick="clearSession()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #B0B0B0; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
                 Clear Session (Debug)
             </button>
@@ -172,7 +177,16 @@
     <script src="../scripts/config.js"></script>
     <script>
         // Initialize Supabase client
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let supabase;
+        try {
+            if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined') {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            } else {
+                console.warn('Supabase configuration not found');
+            }
+        } catch (error) {
+            console.error('Error initializing Supabase:', error);
+        }
 
         // DOM elements
         const loginForm = document.getElementById('loginForm');
@@ -216,6 +230,11 @@
             setLoading(true);
 
             try {
+                // Check if Supabase is available
+                if (!supabase) {
+                    throw new Error('Authentication service not available');
+                }
+                
                 // Attempt to sign in with Supabase
                 const { data, error } = await supabase.auth.signInWithPassword({
                     email: email,
@@ -249,6 +268,8 @@
                     errorMsg = 'Please verify your email address';
                 } else if (error.message.includes('Too many requests')) {
                     errorMsg = 'Too many login attempts. Please try again later.';
+                } else if (error.message.includes('Authentication service not available')) {
+                    errorMsg = 'Authentication service is currently unavailable. Please try again later.';
                 }
                 
                 showError(errorMsg);
@@ -282,27 +303,38 @@
         }
 
         // Check if user is already logged in
+        let redirectAttempted = false; // Flag to prevent multiple redirects
+        
         window.addEventListener('load', async () => {
-            console.log('Login page loaded, checking authentication...');
+            console.log('Login page loaded');
+            
+            // Only check authentication if Supabase is available
+            if (!supabase) {
+                console.log('Supabase not available, skipping auth check');
+                return;
+            }
+            
             try {
-                // Check if user is authenticated with Supabase
+                // Simple check for existing session without redirect
                 const { data: { user }, error } = await supabase.auth.getUser();
                 
-                console.log('Supabase auth check result:', { user: !!user, error: !!error });
-                
                 if (user && !error) {
-                    console.log('User is authenticated, redirecting to home...');
-                    // User is properly authenticated, redirect to dashboard
-                    window.location.href = 'home.html';
+                    console.log('User is authenticated');
+                    // Store user data but don't redirect automatically
+                    localStorage.setItem('meridian_user', JSON.stringify(user));
+                    // Show dashboard link
+                    document.getElementById('dashboardLink').style.display = 'block';
                 } else {
-                    console.log('User not authenticated, clearing session data...');
-                    // Clear any invalid session data
+                    console.log('User not authenticated, clearing session data');
                     localStorage.removeItem('meridian_user');
+                    // Hide dashboard link
+                    document.getElementById('dashboardLink').style.display = 'none';
                 }
             } catch (error) {
                 console.error('Auth check error:', error);
-                // Clear any corrupted session data
                 localStorage.removeItem('meridian_user');
+                // Hide dashboard link on error
+                document.getElementById('dashboardLink').style.display = 'none';
             }
         });
 
