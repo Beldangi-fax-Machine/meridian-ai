@@ -1,6 +1,9 @@
--- User Profile Schema for Meridian AI
--- This table stores user profile information connected to Supabase auth UUID
--- Based on the editable fields in the profile page
+-- Complete Database Setup for Meridian AI
+-- This script sets up all tables in the correct order
+
+-- 1. First, create the user_profiles table (this is our main user table)
+-- Drop existing table if it exists to avoid conflicts
+DROP TABLE IF EXISTS user_profiles CASCADE;
 
 -- Create USER_PROFILES table
 CREATE TABLE IF NOT EXISTS user_profiles (
@@ -73,6 +76,9 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW
@@ -93,6 +99,9 @@ BEGIN
     RETURN NEW;
 END;
 $$ language 'plpgsql';
+
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
 
 CREATE TRIGGER on_auth_user_updated
     AFTER UPDATE ON auth.users
@@ -158,13 +167,14 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Grant permissions (adjust as needed for your setup)
--- GRANT SELECT, INSERT, UPDATE, DELETE ON user_profiles TO authenticated;
--- GRANT EXECUTE ON FUNCTION update_last_login(UUID) TO authenticated;
--- GRANT EXECUTE ON FUNCTION get_user_profile_with_auth(UUID) TO authenticated;
-
 -- Create RLS (Row Level Security) policies
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can delete own profile" ON user_profiles;
 
 -- Policy: Users can only see their own profile
 CREATE POLICY "Users can view own profile" ON user_profiles
@@ -180,4 +190,53 @@ CREATE POLICY "Users can insert own profile" ON user_profiles
 
 -- Policy: Users can delete their own profile
 CREATE POLICY "Users can delete own profile" ON user_profiles
-    FOR DELETE USING (auth.uid() = auth_uuid); 
+    FOR DELETE USING (auth.uid() = auth_uuid);
+
+-- Grant permissions (adjust as needed for your setup)
+GRANT SELECT, INSERT, UPDATE, DELETE ON user_profiles TO authenticated;
+GRANT EXECUTE ON FUNCTION update_last_login(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_user_profile_with_auth(UUID) TO authenticated;
+
+-- 2. Create status table for user status updates
+CREATE TABLE IF NOT EXISTS user_status (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    auth_uuid UUID NOT NULL REFERENCES user_profiles(auth_uuid) ON DELETE CASCADE,
+    status_text TEXT NOT NULL,
+    status_type VARCHAR(50) DEFAULT 'general', -- general, work, personal, etc.
+    is_public BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for status table
+CREATE INDEX IF NOT EXISTS idx_user_status_auth_uuid ON user_status(auth_uuid);
+CREATE INDEX IF NOT EXISTS idx_user_status_created_at ON user_status(created_at);
+CREATE INDEX IF NOT EXISTS idx_user_status_type ON user_status(status_type);
+
+-- Create trigger for status table
+CREATE TRIGGER update_user_status_updated_at 
+    BEFORE UPDATE ON user_status 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable RLS for status table
+ALTER TABLE user_status ENABLE ROW LEVEL SECURITY;
+
+-- Policies for status table
+CREATE POLICY "Users can view public statuses" ON user_status
+    FOR SELECT USING (is_public = true OR auth.uid() = auth_uuid);
+
+CREATE POLICY "Users can insert own status" ON user_status
+    FOR INSERT WITH CHECK (auth.uid() = auth_uuid);
+
+CREATE POLICY "Users can update own status" ON user_status
+    FOR UPDATE USING (auth.uid() = auth_uuid);
+
+CREATE POLICY "Users can delete own status" ON user_status
+    FOR DELETE USING (auth.uid() = auth_uuid);
+
+-- Grant permissions for status table
+GRANT SELECT, INSERT, UPDATE, DELETE ON user_status TO authenticated;
+
+-- Success message
+SELECT 'Database setup completed successfully!' as status; 
