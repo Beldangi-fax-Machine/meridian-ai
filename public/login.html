@@ -162,6 +162,10 @@
         </form>
         <div class="back-link">
             <a href="index.html"><i class="fas fa-arrow-left"></i> Back to Home</a>
+            <br><br>
+            <button onclick="testLogin()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #B0B0B0; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-top: 10px;">
+                Test Login (Debug)
+            </button>
         </div>
     </div>
 
@@ -203,7 +207,7 @@
             const email = emailInput.value.trim();
             const password = passwordInput.value;
 
-            console.log('Login attempt started');
+            console.log('=== LOGIN ATTEMPT STARTED ===');
             console.log('Email:', email);
             console.log('Password length:', password.length);
             console.log('Supabase client available:', !!supabase);
@@ -228,11 +232,11 @@
             try {
                 // Check if Supabase is available
                 if (!supabase) {
-                    console.error('Supabase client not available');
+                    console.error('❌ Supabase client not available');
                     throw new Error('Authentication service not available');
                 }
                 
-                console.log('Attempting Supabase sign in...');
+                console.log('🔄 Attempting Supabase sign in...');
                 
                 // Attempt to sign in with Supabase
                 const { data, error } = await supabase.auth.signInWithPassword({
@@ -240,54 +244,67 @@
                     password: password
                 });
 
-                console.log('Supabase response received');
+                console.log('📡 Supabase response received');
                 console.log('Data:', data);
                 console.log('Error:', error);
 
                 if (error) {
-                    console.error('Supabase auth error:', error);
+                    console.error('❌ Supabase auth error:', error);
                     throw error;
                 }
 
-                console.log('Login successful!');
+                if (!data || !data.user) {
+                    console.error('❌ No user data received');
+                    throw new Error('No user data received from authentication service');
+                }
+
+                console.log('✅ Login successful!');
                 console.log('User data:', data.user);
+                console.log('Session:', data.session);
 
                 // Success
                 showSuccess('Login successful! Redirecting...');
                 
                 // Store user session
                 localStorage.setItem('meridian_user', JSON.stringify(data.user));
-                console.log('User session stored in localStorage');
+                if (data.session) {
+                    localStorage.setItem('meridian_session', JSON.stringify(data.session));
+                }
+                console.log('💾 User session stored in localStorage');
                 
-                // Redirect to dashboard or main page after a short delay
+                // Redirect to dashboard after a short delay
                 setTimeout(() => {
+                    console.log('🔄 Redirecting to home page...');
                     window.location.href = 'home.html';
                 }, 1500);
 
             } catch (error) {
-                console.error('Login error details:', error);
+                console.error('❌ Login error details:', error);
                 console.error('Error message:', error.message);
-                console.error('Error code:', error.status);
+                console.error('Error status:', error.status);
+                console.error('Error code:', error.code);
                 
                 // Handle specific error types
                 let errorMsg = 'Login failed. Please try again.';
                 
                 if (error.message.includes('Invalid login credentials')) {
-                    errorMsg = 'Invalid email or password';
+                    errorMsg = 'Invalid email or password. Please check your credentials.';
                 } else if (error.message.includes('Email not confirmed')) {
-                    errorMsg = 'Please verify your email address';
+                    errorMsg = 'Please verify your email address before logging in.';
                 } else if (error.message.includes('Too many requests')) {
-                    errorMsg = 'Too many login attempts. Please try again later.';
+                    errorMsg = 'Too many login attempts. Please wait a few minutes and try again.';
                 } else if (error.message.includes('Authentication service not available')) {
                     errorMsg = 'Authentication service is currently unavailable. Please try again later.';
-                } else if (error.message.includes('fetch')) {
-                    errorMsg = 'Network error. Please check your internet connection.';
+                } else if (error.message.includes('fetch') || error.message.includes('network')) {
+                    errorMsg = 'Network error. Please check your internet connection and try again.';
                 } else if (error.status === 400) {
-                    errorMsg = 'Invalid request. Please check your email and password.';
+                    errorMsg = 'Invalid request. Please check your email and password format.';
                 } else if (error.status === 401) {
                     errorMsg = 'Unauthorized. Please check your credentials.';
                 } else if (error.status === 500) {
-                    errorMsg = 'Server error. Please try again later.';
+                    errorMsg = 'Server error. Please try again in a few moments.';
+                } else if (error.code === 'PGRST116') {
+                    errorMsg = 'User not found. Please check your email address.';
                 }
                 
                 showError(errorMsg);
@@ -364,6 +381,47 @@
                 localStorage.removeItem('meridian_user');
             }
         });
+
+        // Test login function for debugging
+        async function testLogin() {
+            console.log('=== TEST LOGIN STARTED ===');
+            
+            if (!supabase) {
+                console.error('❌ Supabase not available');
+                showError('Supabase not available');
+                return;
+            }
+
+            try {
+                // Test with a sample user (you'll need to create this user first)
+                const testEmail = 'test@example.com';
+                const testPassword = 'testpassword123';
+                
+                console.log('🔄 Testing login with:', testEmail);
+                
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: testEmail,
+                    password: testPassword
+                });
+
+                console.log('📡 Test response:', { data, error });
+
+                if (error) {
+                    console.error('❌ Test login failed:', error);
+                    showError(`Test login failed: ${error.message}`);
+                } else {
+                    console.log('✅ Test login successful!');
+                    showSuccess('Test login successful! User exists and credentials work.');
+                    
+                    // Sign out immediately after test
+                    await supabase.auth.signOut();
+                    console.log('🔄 Signed out after test');
+                }
+            } catch (error) {
+                console.error('❌ Test login error:', error);
+                showError(`Test login error: ${error.message}`);
+            }
+        }
     </script>
 </body>
 </html> 
