@@ -425,8 +425,19 @@
     </div>
 
     <script>
-        // Initialize Supabase client
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Initialize Supabase client with error handling
+        let supabase;
+        try {
+            if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined') {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            } else {
+                console.warn('Supabase configuration not found, using fallback mode');
+                supabase = null;
+            }
+        } catch (error) {
+            console.error('Error initializing Supabase:', error);
+            supabase = null;
+        }
 
         // DOM elements
         const loadingScreen = document.getElementById('loadingScreen');
@@ -434,8 +445,26 @@
         const userEmail = document.getElementById('userEmail');
         const logoutBtn = document.getElementById('logoutBtn');
 
+        // Backup: Hide loading screen when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (loadingScreen && loadingScreen.style.display !== 'none') {
+                    console.log('DOM ready - hiding loading screen');
+                    loadingScreen.style.display = 'none';
+                }
+            }, 1000);
+        });
+
         // Check authentication on page load
         window.addEventListener('load', async () => {
+            // Set a timeout to hide loading screen if something goes wrong
+            setTimeout(() => {
+                if (loadingScreen && loadingScreen.style.display !== 'none') {
+                    console.log('Forcing loading screen to hide due to timeout');
+                    loadingScreen.style.display = 'none';
+                }
+            }, 3000); // 3 second timeout
+
             try {
                 // Quick check for stored user session
                 const storedUser = localStorage.getItem('meridian_user');
@@ -454,13 +483,19 @@
                 loadDashboardData();
                 
                 // Hide loading screen immediately
-                loadingScreen.style.display = 'none';
+                if (loadingScreen) {
+                    loadingScreen.style.display = 'none';
+                }
 
                 // Verify session in background (non-blocking)
                 verifySessionInBackground();
 
             } catch (error) {
                 console.error('Auth check error:', error);
+                // Hide loading screen even if there's an error
+                if (loadingScreen) {
+                    loadingScreen.style.display = 'none';
+                }
                 localStorage.removeItem('meridian_user');
                 window.location.href = 'login.html';
             }
@@ -468,6 +503,11 @@
 
         // Background session verification (non-blocking)
         async function verifySessionInBackground() {
+            if (!supabase) {
+                console.log('Supabase not available, skipping background verification');
+                return;
+            }
+            
             try {
                 const { data: { user }, error } = await supabase.auth.getUser();
                 
@@ -504,6 +544,11 @@
             // Show fallback data immediately to prevent loading delays
             updateStats(null, null);
             initCharts(null, null);
+            
+            if (!supabase) {
+                console.log('Supabase not available, using fallback data only');
+                return;
+            }
             
             try {
                 // Fetch system status data in background
