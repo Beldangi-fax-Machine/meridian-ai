@@ -578,24 +578,57 @@
         const locationInput = document.getElementById('locationInput');
         const websiteInput = document.getElementById('websiteInput');
 
+        // Backup: Hide loading screen when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (loadingScreen && loadingScreen.style.display !== 'none') {
+                    console.log('DOM ready - hiding loading screen');
+                    loadingScreen.style.display = 'none';
+                }
+            }, 2000);
+        });
+
         // Check authentication on page load
         window.addEventListener('load', async () => {
+            // Set a timeout to hide loading screen if something goes wrong
+            setTimeout(() => {
+                if (loadingScreen && loadingScreen.style.display !== 'none') {
+                    console.log('Forcing loading screen to hide due to timeout');
+                    loadingScreen.style.display = 'none';
+                }
+            }, 5000); // 5 second timeout
+
             try {
                 // Quick check for stored user session
                 const storedUser = localStorage.getItem('meridian_user');
                 if (!storedUser) {
+                    console.log('No stored user, redirecting to login');
                     window.location.href = 'login.html';
                     return;
                 }
 
                 // Load user data using UserManager
                 if (userManager) {
-                    currentUser = await userManager.getCurrentUser();
-                    await displayUserProfile(currentUser);
+                    try {
+                        currentUser = await userManager.getCurrentUser();
+                        await displayUserProfile(currentUser);
+                    } catch (userError) {
+                        console.error('UserManager error:', userError);
+                        // Fallback to basic auth check
+                        const { data: { user }, error } = await supabase.auth.getUser();
+                        if (error || !user) {
+                            console.log('Auth error, redirecting to login');
+                            localStorage.removeItem('meridian_user');
+                            window.location.href = 'login.html';
+                            return;
+                        }
+                        await displayUserProfile(user);
+                    }
                 } else {
                     // Fallback to basic auth check
                     const { data: { user }, error } = await supabase.auth.getUser();
                     if (error || !user) {
+                        console.log('Auth error, redirecting to login');
                         localStorage.removeItem('meridian_user');
                         window.location.href = 'login.html';
                         return;
@@ -604,12 +637,21 @@
                 }
                 
                 // Hide loading screen
-                loadingScreen.style.display = 'none';
+                if (loadingScreen) {
+                    loadingScreen.style.display = 'none';
+                }
 
             } catch (error) {
                 console.error('Auth check error:', error);
-                localStorage.removeItem('meridian_user');
-                window.location.href = 'login.html';
+                // Hide loading screen even if there's an error
+                if (loadingScreen) {
+                    loadingScreen.style.display = 'none';
+                }
+                // Don't redirect on every error to prevent infinite loops
+                if (error.message && error.message.includes('not authenticated')) {
+                    localStorage.removeItem('meridian_user');
+                    window.location.href = 'login.html';
+                }
             }
         });
 
@@ -802,18 +844,20 @@
             }, 3000);
         }
 
-        // Periodic authentication check
+        // Periodic authentication check (every 30 minutes)
         setInterval(async () => {
             try {
                 if (supabase) {
                     const { data: { user }, error } = await supabase.auth.getUser();
                     if (error || !user) {
+                        console.log('Periodic auth check failed, redirecting to login');
                         localStorage.removeItem('meridian_user');
                         window.location.href = 'login.html';
                     }
                 }
             } catch (error) {
                 console.error('Periodic auth check error:', error);
+                // Don't redirect on periodic check errors to prevent loops
             }
         }, 30 * 60 * 1000); // 30 minutes
     </script>
