@@ -162,15 +162,6 @@
         </form>
         <div class="back-link">
             <a href="index.html"><i class="fas fa-arrow-left"></i> Back to Home</a>
-            <br><br>
-            <div id="dashboardLink" style="display: none;">
-                <a href="home.html" style="background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block; margin-bottom: 10px;">
-                    <i class="fas fa-tachometer-alt"></i> Go to Dashboard
-                </a>
-            </div>
-            <button onclick="clearSession()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #B0B0B0; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
-                Clear Session (Debug)
-            </button>
         </div>
     </div>
 
@@ -315,33 +306,23 @@
             }
             
             try {
-                // Simple check for existing session without redirect
+                // Check for existing session
                 const { data: { user }, error } = await supabase.auth.getUser();
                 
                 if (user && !error) {
-                    console.log('User is authenticated');
-                    // Store user data but don't redirect automatically
+                    console.log('User is authenticated, redirecting to home page');
+                    // Store user data and redirect to home page
                     localStorage.setItem('meridian_user', JSON.stringify(user));
-                    // Show dashboard link
-                    document.getElementById('dashboardLink').style.display = 'block';
+                    window.location.href = 'home.html';
                 } else {
                     console.log('User not authenticated, clearing session data');
                     localStorage.removeItem('meridian_user');
-                    // Hide dashboard link
-                    document.getElementById('dashboardLink').style.display = 'none';
                 }
             } catch (error) {
                 console.error('Auth check error:', error);
                 localStorage.removeItem('meridian_user');
-                // Hide dashboard link on error
-                document.getElementById('dashboardLink').style.display = 'none';
             }
         });
-
-        function clearSession() {
-            localStorage.removeItem('meridian_user');
-            showError('Session cleared');
-        }
     </script>
 </body>
 </html> 
