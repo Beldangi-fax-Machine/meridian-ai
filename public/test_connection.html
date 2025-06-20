@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Supabase Connection - Meridian AI</title>
+    <title>Supabase Connection Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
-            margin: 0 auto;
+            margin: 50px auto;
             padding: 20px;
             background: #f5f5f5;
         }
@@ -19,18 +20,9 @@
             border-radius: 8px;
             border-left: 4px solid #007bff;
         }
-        .success {
-            border-left-color: #28a745;
-            background: #d4edda;
-        }
-        .error {
-            border-left-color: #dc3545;
-            background: #f8d7da;
-        }
-        .loading {
-            border-left-color: #ffc107;
-            background: #fff3cd;
-        }
+        .success { border-left-color: #28a745; }
+        .error { border-left-color: #dc3545; }
+        .warning { border-left-color: #ffc107; }
         button {
             background: #007bff;
             color: white;
@@ -40,293 +32,293 @@
             cursor: pointer;
             margin: 5px;
         }
-        button:hover {
-            background: #0056b3;
-        }
+        button:hover { background: #0056b3; }
         pre {
             background: #f8f9fa;
             padding: 10px;
             border-radius: 4px;
             overflow-x: auto;
         }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .result.success { background: #d4edda; color: #155724; }
+        .result.error { background: #f8d7da; color: #721c24; }
+        .result.warning { background: #fff3cd; color: #856404; }
     </style>
 </head>
 <body>
-    <h1>🔧 Supabase Connection Test</h1>
+    <h1>Supabase Connection Test</h1>
     
-    <div class="test-section" id="config-test">
+    <div class="test-section">
         <h3>1. Configuration Test</h3>
-        <div id="config-result">Testing...</div>
-    </div>
-
-    <div class="test-section" id="connection-test">
-        <h3>2. Connection Test</h3>
-        <div id="connection-result">Waiting...</div>
-    </div>
-
-    <div class="test-section" id="tables-test">
-        <h3>3. Database Tables Test</h3>
-        <div id="tables-result">Waiting...</div>
-        <button onclick="testTables()">Test Tables</button>
-    </div>
-
-    <div class="test-section" id="data-test">
-        <h3>4. Sample Data Test</h3>
-        <div id="data-result">Waiting...</div>
-        <button onclick="testData()">Test Data</button>
-        <button onclick="populateData()">Populate Sample Data</button>
+        <button onclick="testConfig()">Test Configuration</button>
+        <div id="configResult"></div>
     </div>
 
     <div class="test-section">
-        <h3>5. Quick Fix</h3>
-        <p>If the tests above show errors, try these steps:</p>
-        <ol>
-            <li>Make sure your Supabase project is active</li>
-            <li>Check that the tables exist in your Supabase dashboard</li>
-            <li>Run the SQL setup script in your Supabase SQL editor</li>
-            <li>Verify your API keys are correct</li>
-        </ol>
-        <a href="supabase_setup.sql" target="_blank">View SQL Setup Script</a>
+        <h3>2. Connection Test</h3>
+        <button onclick="testConnection()">Test Connection</button>
+        <div id="connectionResult"></div>
     </div>
 
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <div class="test-section">
+        <h3>3. Authentication Test</h3>
+        <button onclick="testAuth()">Test Authentication</button>
+        <div id="authResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Database Test</h3>
+        <button onclick="testDatabase()">Test Database</button>
+        <div id="databaseResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. Create Test User</h3>
+        <input type="email" id="testEmail" placeholder="Email" style="padding: 8px; margin: 5px;">
+        <input type="password" id="testPassword" placeholder="Password" style="padding: 8px; margin: 5px;">
+        <button onclick="createTestUser()">Create Test User</button>
+        <div id="createUserResult"></div>
+    </div>
+
     <script src="../scripts/config.js"></script>
     <script>
         let supabase;
 
-        // Test 1: Configuration
-        function testConfig() {
-            const configDiv = document.getElementById('config-result');
-            const configSection = document.getElementById('config-test');
-            
+        // Initialize Supabase
+        function initSupabase() {
             try {
-                if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_ANON_KEY === 'undefined') {
-                    configDiv.innerHTML = '❌ ERROR: Supabase configuration not found. Check config.js file.';
-                    configSection.className = 'test-section error';
+                if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined') {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    return true;
+                } else {
                     return false;
                 }
-                
-                configDiv.innerHTML = `
-                    ✅ Configuration loaded successfully<br>
-                    <strong>URL:</strong> ${SUPABASE_URL}<br>
-                    <strong>Key:</strong> ${SUPABASE_ANON_KEY.substring(0, 20)}...
-                `;
-                configSection.className = 'test-section success';
-                return true;
             } catch (error) {
-                configDiv.innerHTML = `❌ ERROR: ${error.message}`;
-                configSection.className = 'test-section error';
+                console.error('Error initializing Supabase:', error);
                 return false;
+            }
+        }
+
+        // Test 1: Configuration
+        function testConfig() {
+            const result = document.getElementById('configResult');
+            result.innerHTML = '';
+            
+            const hasUrl = typeof SUPABASE_URL !== 'undefined';
+            const hasKey = typeof SUPABASE_ANON_KEY !== 'undefined';
+            
+            if (hasUrl && hasKey) {
+                result.innerHTML = `
+                    <div class="result success">
+                        ✅ Configuration found<br>
+                        URL: ${SUPABASE_URL}<br>
+                        Key: ${SUPABASE_ANON_KEY.substring(0, 20)}...
+                    </div>
+                `;
+            } else {
+                result.innerHTML = `
+                    <div class="result error">
+                        ❌ Configuration missing<br>
+                        URL: ${hasUrl ? '✅' : '❌'}<br>
+                        Key: ${hasKey ? '✅' : '❌'}
+                    </div>
+                `;
             }
         }
 
         // Test 2: Connection
         async function testConnection() {
-            const connectionDiv = document.getElementById('connection-result');
-            const connectionSection = document.getElementById('connection-test');
+            const result = document.getElementById('connectionResult');
+            result.innerHTML = '<div class="result warning">Testing connection...</div>';
             
+            if (!initSupabase()) {
+                result.innerHTML = '<div class="result error">❌ Supabase not initialized</div>';
+                return;
+            }
+
             try {
-                connectionDiv.innerHTML = '🔄 Testing connection...';
-                connectionSection.className = 'test-section loading';
+                // Simple ping test
+                const { data, error } = await supabase.from('user_profiles').select('count').limit(1);
                 
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                if (error) {
+                    if (error.code === 'PGRST116') {
+                        result.innerHTML = `
+                            <div class="result success">
+                                ✅ Connection successful<br>
+                                Table 'user_profiles' exists but is empty
+                            </div>
+                        `;
+                    } else {
+                        result.innerHTML = `
+                            <div class="result error">
+                                ❌ Connection failed<br>
+                                Error: ${error.message}<br>
+                                Code: ${error.code}
+                            </div>
+                        `;
+                    }
+                } else {
+                    result.innerHTML = `
+                        <div class="result success">
+                            ✅ Connection successful<br>
+                            Data: ${JSON.stringify(data)}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="result error">
+                        ❌ Connection error<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Test 3: Authentication
+        async function testAuth() {
+            const result = document.getElementById('authResult');
+            result.innerHTML = '<div class="result warning">Testing authentication...</div>';
+            
+            if (!supabase) {
+                result.innerHTML = '<div class="result error">❌ Supabase not initialized</div>';
+                return;
+            }
+
+            try {
+                // Test auth service
+                const { data: { user }, error } = await supabase.auth.getUser();
                 
-                // Test a simple query
+                if (error) {
+                    result.innerHTML = `
+                        <div class="result error">
+                            ❌ Authentication service error<br>
+                            Error: ${error.message}
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <div class="result success">
+                            ✅ Authentication service working<br>
+                            Current user: ${user ? user.email : 'None'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="result error">
+                        ❌ Authentication error<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Test 4: Database
+        async function testDatabase() {
+            const result = document.getElementById('databaseResult');
+            result.innerHTML = '<div class="result warning">Testing database...</div>';
+            
+            if (!supabase) {
+                result.innerHTML = '<div class="result error">❌ Supabase not initialized</div>';
+                return;
+            }
+
+            try {
+                // Test if tables exist
                 const { data, error } = await supabase
-                    .from('system_status')
-                    .select('count')
+                    .from('user_profiles')
+                    .select('*')
                     .limit(1);
                 
                 if (error) {
-                    connectionDiv.innerHTML = `❌ Connection failed: ${error.message}`;
-                    connectionSection.className = 'test-section error';
-                    return false;
-                }
-                
-                connectionDiv.innerHTML = '✅ Connection successful!';
-                connectionSection.className = 'test-section success';
-                return true;
-            } catch (error) {
-                connectionDiv.innerHTML = `❌ Connection error: ${error.message}`;
-                connectionSection.className = 'test-section error';
-                return false;
-            }
-        }
-
-        // Test 3: Tables
-        async function testTables() {
-            const tablesDiv = document.getElementById('tables-result');
-            const tablesSection = document.getElementById('tables-test');
-            
-            try {
-                tablesDiv.innerHTML = '🔄 Testing tables...';
-                tablesSection.className = 'test-section loading';
-                
-                const tables = ['system_status', 'incidents', 'uptime_stats'];
-                const results = {};
-                
-                for (const table of tables) {
-                    try {
-                        const { data, error } = await supabase
-                            .from(table)
-                            .select('*')
-                            .limit(1);
-                        
-                        if (error) {
-                            results[table] = { exists: false, error: error.message };
-                        } else {
-                            results[table] = { exists: true, count: data ? data.length : 0 };
-                        }
-                    } catch (err) {
-                        results[table] = { exists: false, error: err.message };
-                    }
-                }
-                
-                let html = '<h4>Table Status:</h4>';
-                let allExist = true;
-                
-                for (const [table, result] of Object.entries(results)) {
-                    if (result.exists) {
-                        html += `✅ <strong>${table}</strong>: Exists (${result.count} rows)<br>`;
-                    } else {
-                        html += `❌ <strong>${table}</strong>: ${result.error}<br>`;
-                        allExist = false;
-                    }
-                }
-                
-                if (allExist) {
-                    tablesDiv.innerHTML = html;
-                    tablesSection.className = 'test-section success';
+                    result.innerHTML = `
+                        <div class="result error">
+                            ❌ Database error<br>
+                            Error: ${error.message}<br>
+                            Code: ${error.code}<br>
+                            <br>
+                            <strong>Solution:</strong> Run the database setup script in your Supabase SQL editor
+                        </div>
+                    `;
                 } else {
-                    tablesDiv.innerHTML = html + '<br><strong>Some tables are missing. Run the SQL setup script.</strong>';
-                    tablesSection.className = 'test-section error';
+                    result.innerHTML = `
+                        <div class="result success">
+                            ✅ Database working<br>
+                            user_profiles table accessible<br>
+                            Records: ${data ? data.length : 0}
+                        </div>
+                    `;
                 }
-                
             } catch (error) {
-                tablesDiv.innerHTML = `❌ Error testing tables: ${error.message}`;
-                tablesSection.className = 'test-section error';
+                result.innerHTML = `
+                    <div class="result error">
+                        ❌ Database error<br>
+                        ${error.message}
+                    </div>
+                `;
             }
         }
 
-        // Test 4: Data
-        async function testData() {
-            const dataDiv = document.getElementById('data-result');
+        // Test 5: Create Test User
+        async function createTestUser() {
+            const result = document.getElementById('createUserResult');
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
             
+            if (!email || !password) {
+                result.innerHTML = '<div class="result error">❌ Please enter email and password</div>';
+                return;
+            }
+
+            result.innerHTML = '<div class="result warning">Creating test user...</div>';
+            
+            if (!supabase) {
+                result.innerHTML = '<div class="result error">❌ Supabase not initialized</div>';
+                return;
+            }
+
             try {
-                dataDiv.innerHTML = '🔄 Testing data...';
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password
+                });
                 
-                const { data: statusData, error: statusError } = await supabase
-                    .from('system_status')
-                    .select('*');
-                
-                const { data: incidentsData, error: incidentsError } = await supabase
-                    .from('incidents')
-                    .select('*');
-                
-                const { data: uptimeData, error: uptimeError } = await supabase
-                    .from('uptime_stats')
-                    .select('*');
-                
-                let html = '<h4>Data Status:</h4>';
-                html += `📊 <strong>System Status:</strong> ${statusError ? 'Error' : statusData?.length || 0} records<br>`;
-                html += `📋 <strong>Incidents:</strong> ${incidentsError ? 'Error' : incidentsData?.length || 0} records<br>`;
-                html += `📈 <strong>Uptime Stats:</strong> ${uptimeError ? 'Error' : uptimeData?.length || 0} records<br>`;
-                
-                const totalRecords = (statusData?.length || 0) + (incidentsData?.length || 0) + (uptimeData?.length || 0);
-                
-                if (totalRecords > 0) {
-                    html += `<br>✅ <strong>Total:</strong> ${totalRecords} records found`;
+                if (error) {
+                    result.innerHTML = `
+                        <div class="result error">
+                            ❌ User creation failed<br>
+                            Error: ${error.message}
+                        </div>
+                    `;
                 } else {
-                    html += `<br>⚠️ <strong>No data found.</strong> Click "Populate Sample Data" to add test data.`;
+                    result.innerHTML = `
+                        <div class="result success">
+                            ✅ Test user created successfully<br>
+                            Email: ${data.user.email}<br>
+                            ID: ${data.user.id}<br>
+                            <br>
+                            <strong>Note:</strong> Check your email for verification link
+                        </div>
+                    `;
                 }
-                
-                dataDiv.innerHTML = html;
-                
             } catch (error) {
-                dataDiv.innerHTML = `❌ Error testing data: ${error.message}`;
+                result.innerHTML = `
+                    <div class="result error">
+                        ❌ User creation error<br>
+                        ${error.message}
+                    </div>
+                `;
             }
         }
 
-        // Populate sample data
-        async function populateData() {
-            const dataDiv = document.getElementById('data-result');
-            
-            try {
-                dataDiv.innerHTML = '🔄 Populating sample data...';
-                
-                // Sample data
-                const systemStatusData = [
-                    { service_name: 'AI Core Engine', status: 'operational', response_time: 85 },
-                    { service_name: 'API Gateway', status: 'operational', response_time: 45 },
-                    { service_name: 'Database', status: 'operational', response_time: 120 },
-                    { service_name: 'User Dashboard', status: 'operational', response_time: 65 },
-                    { service_name: 'Analytics Engine', status: 'operational', response_time: 95 },
-                    { service_name: 'Security Services', status: 'operational', response_time: 55 }
-                ];
-
-                const incidentsData = [
-                    {
-                        title: 'Scheduled Maintenance Completed',
-                        description: 'Routine system maintenance has been completed successfully.',
-                        severity: 'low',
-                        status: 'resolved',
-                        affected_services: ['All Services']
-                    }
-                ];
-
-                const uptimeStatsData = [
-                    { service_name: 'AI Core Engine', uptime_percentage: 99.9, total_checks: 1000, successful_checks: 999 },
-                    { service_name: 'API Gateway', uptime_percentage: 99.8, total_checks: 1000, successful_checks: 998 },
-                    { service_name: 'Database', uptime_percentage: 99.9, total_checks: 1000, successful_checks: 999 },
-                    { service_name: 'User Dashboard', uptime_percentage: 99.7, total_checks: 1000, successful_checks: 997 },
-                    { service_name: 'Analytics Engine', uptime_percentage: 99.6, total_checks: 1000, successful_checks: 996 },
-                    { service_name: 'Security Services', uptime_percentage: 99.9, total_checks: 1000, successful_checks: 999 }
-                ];
-
-                // Insert data
-                const { error: statusError } = await supabase
-                    .from('system_status')
-                    .upsert(systemStatusData, { onConflict: 'service_name' });
-
-                const { error: incidentsError } = await supabase
-                    .from('incidents')
-                    .upsert(incidentsData);
-
-                const { error: uptimeError } = await supabase
-                    .from('uptime_stats')
-                    .upsert(uptimeStatsData, { onConflict: 'service_name' });
-
-                if (statusError || incidentsError || uptimeError) {
-                    throw new Error(`Status: ${statusError?.message}, Incidents: ${incidentsError?.message}, Uptime: ${uptimeError?.message}`);
-                }
-
-                dataDiv.innerHTML = '✅ Sample data populated successfully!<br><a href="status.html">View Status Page</a>';
-                
-            } catch (error) {
-                dataDiv.innerHTML = `❌ Error populating data: ${error.message}`;
-            }
-        }
-
-        // Run initial tests
-        window.addEventListener('load', async function() {
-            console.log('Running connection tests...');
-            
-            // Test 1: Configuration
-            const configOk = testConfig();
-            
-            if (configOk) {
-                // Test 2: Connection
-                const connectionOk = await testConnection();
-                
-                if (connectionOk) {
-                    // Test 3: Tables
-                    testTables();
-                    
-                    // Test 4: Data
-                    testData();
-                }
-            }
+        // Auto-run config test on load
+        window.addEventListener('load', () => {
+            testConfig();
         });
     </script>
 </body>
