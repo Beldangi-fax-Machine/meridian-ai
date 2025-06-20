@@ -203,6 +203,11 @@
             const email = emailInput.value.trim();
             const password = passwordInput.value;
 
+            console.log('Login attempt started');
+            console.log('Email:', email);
+            console.log('Password length:', password.length);
+            console.log('Supabase client available:', !!supabase);
+
             // Clear previous messages
             hideMessages();
 
@@ -223,8 +228,11 @@
             try {
                 // Check if Supabase is available
                 if (!supabase) {
+                    console.error('Supabase client not available');
                     throw new Error('Authentication service not available');
                 }
+                
+                console.log('Attempting Supabase sign in...');
                 
                 // Attempt to sign in with Supabase
                 const { data, error } = await supabase.auth.signInWithPassword({
@@ -232,15 +240,24 @@
                     password: password
                 });
 
+                console.log('Supabase response received');
+                console.log('Data:', data);
+                console.log('Error:', error);
+
                 if (error) {
+                    console.error('Supabase auth error:', error);
                     throw error;
                 }
+
+                console.log('Login successful!');
+                console.log('User data:', data.user);
 
                 // Success
                 showSuccess('Login successful! Redirecting...');
                 
                 // Store user session
                 localStorage.setItem('meridian_user', JSON.stringify(data.user));
+                console.log('User session stored in localStorage');
                 
                 // Redirect to dashboard or main page after a short delay
                 setTimeout(() => {
@@ -248,7 +265,9 @@
                 }, 1500);
 
             } catch (error) {
-                console.error('Login error:', error);
+                console.error('Login error details:', error);
+                console.error('Error message:', error.message);
+                console.error('Error code:', error.status);
                 
                 // Handle specific error types
                 let errorMsg = 'Login failed. Please try again.';
@@ -261,6 +280,14 @@
                     errorMsg = 'Too many login attempts. Please try again later.';
                 } else if (error.message.includes('Authentication service not available')) {
                     errorMsg = 'Authentication service is currently unavailable. Please try again later.';
+                } else if (error.message.includes('fetch')) {
+                    errorMsg = 'Network error. Please check your internet connection.';
+                } else if (error.status === 400) {
+                    errorMsg = 'Invalid request. Please check your email and password.';
+                } else if (error.status === 401) {
+                    errorMsg = 'Unauthorized. Please check your credentials.';
+                } else if (error.status === 500) {
+                    errorMsg = 'Server error. Please try again later.';
                 }
                 
                 showError(errorMsg);
@@ -298,6 +325,21 @@
         
         window.addEventListener('load', async () => {
             console.log('Login page loaded');
+            
+            // Test Supabase connection
+            if (supabase) {
+                try {
+                    console.log('Testing Supabase connection...');
+                    const { data, error } = await supabase.from('user_profiles').select('count').limit(1);
+                    if (error) {
+                        console.warn('Supabase connection test failed:', error);
+                    } else {
+                        console.log('Supabase connection test successful');
+                    }
+                } catch (error) {
+                    console.warn('Supabase connection test error:', error);
+                }
+            }
             
             // Only check authentication if Supabase is available
             if (!supabase) {
